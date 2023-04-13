@@ -3,6 +3,7 @@ package antafes.mountaincoreTranslator.gui;
 import antafes.mountaincoreTranslator.MountaincoreTranslator;
 import antafes.mountaincoreTranslator.entity.TranslationEntity;
 import antafes.mountaincoreTranslator.entity.TranslationMap;
+import antafes.mountaincoreTranslator.gui.element.PDControlScrollPane;
 import antafes.mountaincoreTranslator.gui.event.SaveFileEvent;
 import antafes.mountaincoreTranslator.gui.event.SaveFileListener;
 import org.apache.commons.lang3.StringUtils;
@@ -147,12 +148,14 @@ public class TranslationPanel extends JTabbedPane
         }
 
         JTextPane keyLabel = new JTextPane();
-        keyLabel.setContentType("text/html");
-        keyLabel.setText(translation.getKey().replace(".", ".<wbr>"));
+        keyLabel.setText(translation.getKey());
         keyLabel.setBackground(backgroundColor);
         keyLabel.setEditable(false);
-        keyLabel.setPreferredSize(new Dimension(200, 20));
-        panel.add(keyLabel, constraints);
+        keyLabel.setPreferredSize(new Dimension(200, 50));
+        JScrollPane keyScrollPane = new PDControlScrollPane();
+        keyScrollPane.setPreferredSize(new Dimension(200, 50));
+        keyScrollPane.setViewportView(keyLabel);
+        panel.add(keyScrollPane, constraints);
         constraints.gridx++;
 
         JTextPane noticeLabel = new JTextPane();
@@ -160,7 +163,10 @@ public class TranslationPanel extends JTabbedPane
         noticeLabel.setBackground(backgroundColor);
         noticeLabel.setEditable(false);
         noticeLabel.setPreferredSize(new Dimension(300, 50));
-        panel.add(noticeLabel, constraints);
+        JScrollPane noticeScrollPane = new PDControlScrollPane();
+        noticeScrollPane.setPreferredSize(new Dimension(300, 50));
+        noticeScrollPane.setViewportView(noticeLabel);
+        panel.add(noticeScrollPane, constraints);
         constraints.gridx++;
 
         JTextPane englishLabel = new JTextPane();
@@ -168,14 +174,19 @@ public class TranslationPanel extends JTabbedPane
         englishLabel.setText(translation.getEnglish());
         englishLabel.setEditable(false);
         englishLabel.setPreferredSize(new Dimension(300, 50));
-        englishLabel.setAutoscrolls(true);
-        panel.add(englishLabel, constraints);
+        JScrollPane englishScrollPane = new PDControlScrollPane();
+        englishScrollPane.setPreferredSize(new Dimension(300, 50));
+        englishScrollPane.setViewportView(englishLabel);
+        panel.add(englishScrollPane, constraints);
         constraints.gridx++;
 
         JTextPane textArea = new JTextPane();
         textArea.setPreferredSize(new Dimension(300, 50));
         textArea.setText(translation.getTranslated());
-        panel.add(textArea, constraints);
+        JScrollPane translationScrollPane = new PDControlScrollPane();
+        translationScrollPane.setPreferredSize(new Dimension(300, 50));
+        translationScrollPane.setViewportView(textArea);
+        panel.add(translationScrollPane, constraints);
         this.translationElements.put(translation.getKey(), textArea);
         constraints.gridx = 0;
         constraints.gridy++;
@@ -198,13 +209,13 @@ public class TranslationPanel extends JTabbedPane
                 map.put(group, new ArrayList<>());
             }
 
-            list.forEach(entity -> {
-                map.get(group).add(
+            list.forEach(
+                entity -> map.get(group).add(
                     entity.toBuilder()
                         .setTranslated(this.translationElements.get(entity.getKey()).getText())
                         .build()
-                );
-            });
+                )
+            );
         });
 
         saveFileEvent.setTranslationMap(map);

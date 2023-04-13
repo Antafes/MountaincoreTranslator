@@ -56,32 +56,13 @@ public class TranslationPanel extends JTabbedPane
     {
         JPanel panel = new JPanel();
         panel.setLayout(new GridBagLayout());
-        GridBagConstraints constraints = new GridBagConstraints();
-        constraints.gridwidth = 1;
-        constraints.gridx = 0;
-        constraints.gridy = 0;
-        constraints.ipady = 5;
-        constraints.insets.set(2, 2, 2, 2);
-        constraints.fill = GridBagConstraints.BOTH;
-        constraints.anchor = GridBagConstraints.NORTHWEST;
+        GridBagConstraints constraints = this.setupConstraints();
 
-        panel.add(new JLabel("Key"), constraints);
-        constraints.gridx++;
-        panel.add(new JLabel("Notice"), constraints);
-        constraints.gridx++;
-        panel.add(new JLabel("English"), constraints);
-        constraints.gridx++;
-        panel.add(new JLabel(this.translations.getLanguage()), constraints);
-        constraints.gridx = 0;
-        constraints.gridy++;
+        this.createHeader(panel, constraints);
 
-        this.translations.forEach((group, translationList) -> {
-            constraints.gridwidth = 4;
-            panel.add(this.createGroupLabel(group), constraints);
-            constraints.gridwidth = 1;
-            constraints.gridy++;
-            translationList.forEach(translation -> createRow(panel, constraints, translation));
-        });
+        this.translations.forEach(
+            (group, translationList) -> this.createGroup(panel, constraints, group, translationList)
+        );
 
         JScrollPane scrollPane = new JScrollPane();
         scrollPane.setPreferredSize(new Dimension(1000, 600));
@@ -96,6 +77,25 @@ public class TranslationPanel extends JTabbedPane
     {
         JPanel panel = new JPanel();
         panel.setLayout(new GridBagLayout());
+        GridBagConstraints constraints = this.setupConstraints();
+
+        this.createHeader(panel, constraints);
+
+        this.translations.forEach(
+            (group, translationList) -> this.createGroup(panel, constraints, group, translationList, true)
+        );
+
+        JScrollPane scrollPane = new JScrollPane();
+        scrollPane.setPreferredSize(new Dimension(1100, 600));
+        scrollPane.getVerticalScrollBar().setUnitIncrement(16);
+        scrollPane.getHorizontalScrollBar().setUnitIncrement(16);
+        scrollPane.setViewportView(panel);
+
+        this.addTab("Not translated", scrollPane);
+    }
+
+    private GridBagConstraints setupConstraints()
+    {
         GridBagConstraints constraints = new GridBagConstraints();
         constraints.gridwidth = 1;
         constraints.gridx = 0;
@@ -104,7 +104,11 @@ public class TranslationPanel extends JTabbedPane
         constraints.insets.set(2, 2, 2, 2);
         constraints.fill = GridBagConstraints.BOTH;
         constraints.anchor = GridBagConstraints.NORTHWEST;
+        return constraints;
+    }
 
+    private void createHeader(JPanel panel, GridBagConstraints constraints)
+    {
         panel.add(new JLabel("Key"), constraints);
         constraints.gridx++;
         panel.add(new JLabel("Notice"), constraints);
@@ -114,26 +118,48 @@ public class TranslationPanel extends JTabbedPane
         panel.add(new JLabel(this.translations.getLanguage()), constraints);
         constraints.gridx = 0;
         constraints.gridy++;
+    }
 
-        this.translations.forEach((group, translationList) -> {
-            constraints.gridwidth = 4;
-            panel.add(this.createGroupLabel(group), constraints);
-            constraints.gridwidth = 1;
-            constraints.gridy++;
-            translationList.forEach(translation -> {
-                if (translation.getTranslated().isEmpty()) {
-                    this.createRow(panel, constraints, translation);
-                }
-            });
+    private void createGroup(
+        JPanel panel,
+        GridBagConstraints constraints,
+        String group,
+        ArrayList<TranslationEntity> translationList
+    ) {
+        this.createGroup(panel, constraints, group, translationList, false);
+    }
+
+    private void createGroup(
+        JPanel panel,
+        GridBagConstraints constraints,
+        String group,
+        ArrayList<TranslationEntity> translationList,
+        boolean skipEmpty
+    ) {
+        if (skipEmpty && this.checkGroupAllTranslated(translationList)) {
+            return;
+        }
+
+        constraints.gridwidth = 4;
+        panel.add(this.createGroupLabel(group), constraints);
+        constraints.gridwidth = 1;
+        constraints.gridy++;
+        translationList.forEach(translation -> {
+            if (!skipEmpty || translation.getTranslated().isEmpty()) {
+                this.createRow(panel, constraints, translation);
+            }
         });
+    }
 
-        JScrollPane scrollPane = new JScrollPane();
-        scrollPane.setPreferredSize(new Dimension(1100, 600));
-        scrollPane.getVerticalScrollBar().setUnitIncrement(16);
-        scrollPane.getHorizontalScrollBar().setUnitIncrement(16);
-        scrollPane.setViewportView(panel);
+    private boolean checkGroupAllTranslated(ArrayList<TranslationEntity> translationList)
+    {
+        for (TranslationEntity translation : translationList) {
+            if (translation.getTranslated().isEmpty()) {
+                return false;
+            }
+        }
 
-        this.addTab("Not translated", scrollPane);
+        return true;
     }
 
     private void createRow(JPanel panel, GridBagConstraints constraints, TranslationEntity translation)

@@ -12,7 +12,7 @@ import java.awt.event.ActionListener;
 
 public class OpenActionListener implements ActionListener
 {
-    Component parent;
+    private final Component parent;
 
     public OpenActionListener(Component parent)
     {
@@ -32,7 +32,8 @@ public class OpenActionListener implements ActionListener
 
             FileHandlerService service = new FileHandlerService(fileChooser.getSelectedFile().getPath());
             FileOpenedEvent event = new FileOpenedEvent();
-            event.setTranslationMap(service.read());
+            event.setTranslationMap(service.read())
+                .setFilename(fileChooser.getSelectedFile().getName());
             MountaincoreTranslator.getDispatcher().dispatch(event);
         }
     }

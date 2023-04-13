@@ -1,16 +1,22 @@
 package antafes.mountaincoreTranslator.gui;
 
+import antafes.mountaincoreTranslator.MountaincoreTranslator;
 import antafes.mountaincoreTranslator.entity.TranslationEntity;
 import antafes.mountaincoreTranslator.entity.TranslationMap;
+import antafes.mountaincoreTranslator.gui.event.SaveFileEvent;
+import antafes.mountaincoreTranslator.gui.event.SaveFileListener;
 import org.apache.commons.lang3.StringUtils;
 
 import javax.swing.*;
 import java.awt.*;
+import java.util.ArrayList;
+import java.util.HashMap;
 
 public class TranslationPanel extends JTabbedPane
 {
     private TranslationMap translations;
     private boolean evenRow = true;
+    private final HashMap<String, JTextPane> translationElements = new HashMap<>();
 
     public void setTranslations(TranslationMap translations)
     {
@@ -23,6 +29,16 @@ public class TranslationPanel extends JTabbedPane
 
         this.addAllTab();
         this.addUntranslatedTab();
+
+        this.addEventListener();
+    }
+
+    private void addEventListener()
+    {
+        MountaincoreTranslator.getDispatcher().addListener(
+            SaveFileEvent.class,
+            new SaveFileListener(this::saveFile)
+        );
     }
 
     private void clearTabs()
@@ -83,9 +99,7 @@ public class TranslationPanel extends JTabbedPane
         constraints.gridwidth = 1;
         constraints.gridx = 0;
         constraints.gridy = 0;
-        constraints.ipady = 5;
-        constraints.weightx = 1;
-        constraints.weighty = 1;
+        constraints.ipady = 2;
         constraints.insets.set(2, 2, 2, 2);
         constraints.fill = GridBagConstraints.BOTH;
         constraints.anchor = GridBagConstraints.NORTHWEST;
@@ -113,7 +127,7 @@ public class TranslationPanel extends JTabbedPane
         });
 
         JScrollPane scrollPane = new JScrollPane();
-        scrollPane.setPreferredSize(new Dimension(1000, 600));
+        scrollPane.setPreferredSize(new Dimension(1100, 600));
         scrollPane.getVerticalScrollBar().setUnitIncrement(16);
         scrollPane.getHorizontalScrollBar().setUnitIncrement(16);
         scrollPane.setViewportView(panel);
@@ -126,25 +140,26 @@ public class TranslationPanel extends JTabbedPane
         Color backgroundColor = Color.LIGHT_GRAY;
 
         if (this.evenRow) {
-            backgroundColor = Color.WHITE;
+            backgroundColor = new Color(210, 210, 210);
             this.evenRow = false;
         } else {
             this.evenRow = true;
         }
 
         JTextPane keyLabel = new JTextPane();
-        keyLabel.setText(translation.getKey());
+        keyLabel.setContentType("text/html");
+        keyLabel.setText(translation.getKey().replace(".", ".<wbr>"));
         keyLabel.setBackground(backgroundColor);
-        keyLabel.setMaximumSize(new Dimension(50, 150));
-        keyLabel.setPreferredSize(new Dimension(50, 20));
+        keyLabel.setEditable(false);
+        keyLabel.setPreferredSize(new Dimension(200, 20));
         panel.add(keyLabel, constraints);
         constraints.gridx++;
 
         JTextPane noticeLabel = new JTextPane();
         noticeLabel.setText(translation.getNotice());
         noticeLabel.setBackground(backgroundColor);
-        noticeLabel.setMaximumSize(new Dimension(50, 150));
-        noticeLabel.setPreferredSize(new Dimension(50, 20));
+        noticeLabel.setEditable(false);
+        noticeLabel.setPreferredSize(new Dimension(300, 50));
         panel.add(noticeLabel, constraints);
         constraints.gridx++;
 
@@ -152,15 +167,16 @@ public class TranslationPanel extends JTabbedPane
         englishLabel.setBackground(backgroundColor);
         englishLabel.setText(translation.getEnglish());
         englishLabel.setEditable(false);
-        englishLabel.setPreferredSize(new Dimension(100, 50));
+        englishLabel.setPreferredSize(new Dimension(300, 50));
+        englishLabel.setAutoscrolls(true);
         panel.add(englishLabel, constraints);
         constraints.gridx++;
 
         JTextPane textArea = new JTextPane();
-        textArea.setBackground(backgroundColor);
-        textArea.setPreferredSize(new Dimension(100, 50));
+        textArea.setPreferredSize(new Dimension(300, 50));
         textArea.setText(translation.getTranslated());
         panel.add(textArea, constraints);
+        this.translationElements.put(translation.getKey(), textArea);
         constraints.gridx = 0;
         constraints.gridy++;
     }
@@ -171,5 +187,26 @@ public class TranslationPanel extends JTabbedPane
         parts[0] = StringUtils.capitalize(parts[0]);
 
         return new JLabel(StringUtils.joinWith(" ", (Object[]) parts));
+    }
+
+    private void saveFile(SaveFileEvent saveFileEvent)
+    {
+        TranslationMap map = new TranslationMap(this.translations.getLanguage());
+
+        this.translations.forEach((group, list) -> {
+            if (!map.containsKey(group)) {
+                map.put(group, new ArrayList<>());
+            }
+
+            list.forEach(entity -> {
+                map.get(group).add(
+                    entity.toBuilder()
+                        .setTranslated(this.translationElements.get(entity.getKey()).getText())
+                        .build()
+                );
+            });
+        });
+
+        saveFileEvent.setTranslationMap(map);
     }
 }

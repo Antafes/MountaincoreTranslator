@@ -3,39 +3,36 @@ package antafes.mountaincoreTranslator.service;
 import antafes.mountaincoreTranslator.entity.TranslationEntity;
 import antafes.mountaincoreTranslator.entity.TranslationMap;
 import com.opencsv.CSVReader;
+import com.opencsv.CSVWriter;
 import com.opencsv.exceptions.CsvValidationException;
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Objects;
 
 public class FileHandlerService
 {
-    private CSVReader reader;
-    private String filename;
+    private final String filename;
+    private String path;
 
     public FileHandlerService(String path)
     {
-        try {
-            this.filename = (new File(path)).getName();
-            this.reader = new CSVReader(new FileReader(path));
-        } catch (FileNotFoundException e) {
-            throw new RuntimeException(e);
-        }
+        this.path = path;
+        this.filename = (new File(path)).getName();
     }
 
     public TranslationMap read()
     {
-        TranslationMap translationEntities = new TranslationMap(this.getLanguageFromFilename());
-        String[] values;
-        TranslationEntity entity;
         try {
-            while ((values = this.reader.readNext()) != null) {
+            CSVReader reader = new CSVReader(new FileReader(this.path));
+            TranslationMap translationEntities = new TranslationMap(this.getLanguageFromFilename());
+            String[] values;
+            TranslationEntity entity;
+            while ((values = reader.readNext()) != null) {
                 if (Objects.equals(values[0], "") || Objects.equals(values[0], "KEY")) {
                     continue;
                 }
@@ -53,11 +50,43 @@ public class FileHandlerService
 
                 translationEntities.get(entity.getGroupElement()).add(entity);
             }
+
+            return translationEntities;
         } catch (CsvValidationException | IOException e) {
             throw new RuntimeException(e);
         }
+    }
 
-        return translationEntities;
+    public void write(TranslationMap translationMap)
+    {
+        try {
+            CSVWriter writer = new CSVWriter(new FileWriter(this.path), ',', '"', '"', "\r\n");
+            String[] headlines = {
+                "KEY",
+                "NOTICE",
+                "ENGLISH",
+                this.filename.split("\\.")[0].toUpperCase()
+            };
+            String[] empty = {"", "", "", ""};
+
+            writer.writeNext(headlines, true);
+            writer.writeNext(empty, true);
+
+            translationMap.forEach((group, list) -> {
+                list.forEach(translation -> {
+                    String[] line = {
+                        translation.getKey(),
+                        translation.getNotice(),
+                        translation.getEnglish(),
+                        translation.getTranslated()
+                    };
+                    writer.writeNext(line, true);
+                });
+                writer.writeNext(empty, true);
+            });
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private String getLanguageFromFilename()

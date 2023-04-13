@@ -2,9 +2,7 @@ package antafes.mountaincoreTranslator.gui;
 
 import antafes.mountaincoreTranslator.Configuration;
 import antafes.mountaincoreTranslator.MountaincoreTranslator;
-import antafes.mountaincoreTranslator.gui.event.FileOpenedEvent;
-import antafes.mountaincoreTranslator.gui.event.FileOpenedListener;
-import antafes.mountaincoreTranslator.gui.event.OpenActionListener;
+import antafes.mountaincoreTranslator.gui.event.*;
 
 import javax.swing.*;
 import java.awt.*;
@@ -17,6 +15,8 @@ public class BaseWindow extends JFrame
 {
     private final Configuration configuration;
     private TranslationPanel panel;
+    private String filename;
+    private JMenuItem saveMenuItem;
 
     public BaseWindow() throws HeadlessException
     {
@@ -59,7 +59,7 @@ public class BaseWindow extends JFrame
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                .addComponent(this.panel, javax.swing.GroupLayout.DEFAULT_SIZE, 1100, Short.MAX_VALUE)
+                .addComponent(this.panel, javax.swing.GroupLayout.DEFAULT_SIZE, 1200, Short.MAX_VALUE)
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -73,19 +73,13 @@ public class BaseWindow extends JFrame
     {
         JMenuBar menuBar = new JMenuBar();
         JMenu fileMenu = new JMenu();
-        JMenuItem newMenuItem = new JMenuItem();
         JMenuItem openMenuItem = new JMenuItem();
-        JMenuItem saveMenuItem = new JMenuItem();
+        saveMenuItem = new JMenuItem();
         JMenuItem closeMenuItem = new JMenuItem();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
 
         fileMenu.setText("File");
-
-//        newMenuItem.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_N, InputEvent.CTRL_DOWN_MASK));
-//        newMenuItem.setText("New");
-//        newMenuItem.addActionListener(this::newMenuItemActionPerformed);
-//        fileMenu.add(newMenuItem);
 
         openMenuItem.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_O, InputEvent.CTRL_DOWN_MASK));
         openMenuItem.setText("Open");
@@ -94,7 +88,7 @@ public class BaseWindow extends JFrame
 
         saveMenuItem.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_S, InputEvent.CTRL_DOWN_MASK));
         saveMenuItem.setText("Save");
-//        saveMenuItem.addActionListener(this::saveMenuItemActionPerformed);
+        saveMenuItem.addActionListener(new SaveActionListener(this));
         saveMenuItem.setEnabled(false);
         fileMenu.add(saveMenuItem);
 
@@ -126,15 +120,26 @@ public class BaseWindow extends JFrame
             FileOpenedEvent.class,
             new FileOpenedListener(this::fileOpened)
         );
+        MountaincoreTranslator.getDispatcher().addListener(
+            SaveFileEvent.class,
+            new SaveFileListener(this::saveFile)
+        );
     }
 
     private void fileOpened(FileOpenedEvent fileOpenedEvent)
     {
+        this.filename = fileOpenedEvent.getFilename();
         ShowWaitAction waitAction = new ShowWaitAction(this);
         waitAction.show(aVoid -> {
             this.panel.setTranslations(fileOpenedEvent.getTranslationMap());
+            this.saveMenuItem.setEnabled(true);
 
             return null;
         });
+    }
+
+    private void saveFile(SaveFileEvent saveFileEvent)
+    {
+        saveFileEvent.setFilename(this.filename);
     }
 }

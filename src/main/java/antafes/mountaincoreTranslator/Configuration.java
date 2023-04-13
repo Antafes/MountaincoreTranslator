@@ -102,8 +102,8 @@ public class Configuration
      */
     public File getSaveDirPath(String filename)
     {
-        if (!filename.endsWith(".xml")) {
-            filename += ".xml";
+        if (!filename.endsWith(".csv")) {
+            filename += ".csv";
         }
 
         return new File(this.properties.getProperty("saveDirPath") + "/" + filename);

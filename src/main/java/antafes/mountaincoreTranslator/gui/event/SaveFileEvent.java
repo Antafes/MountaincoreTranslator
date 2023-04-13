@@ -6,11 +6,12 @@ import lombok.Setter;
 import lombok.experimental.Accessors;
 import scripts.laniax.framework.event_dispatcher.Event;
 
+
 @Getter
 @Setter
 @Accessors(chain = true)
-public class FileOpenedEvent extends Event
+public class SaveFileEvent extends Event
 {
-    private TranslationMap translationMap;
     private String filename;
+    private TranslationMap translationMap;
 }

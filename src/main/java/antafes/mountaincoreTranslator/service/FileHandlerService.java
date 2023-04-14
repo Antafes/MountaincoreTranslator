@@ -2,6 +2,7 @@ package antafes.mountaincoreTranslator.service;
 
 import antafes.mountaincoreTranslator.entity.TranslationEntity;
 import antafes.mountaincoreTranslator.entity.TranslationMap;
+import antafes.mountaincoreTranslator.utility.SortingUtility;
 import com.opencsv.CSVReader;
 import com.opencsv.CSVWriter;
 import com.opencsv.exceptions.CsvValidationException;
@@ -17,7 +18,7 @@ import java.util.Objects;
 public class FileHandlerService
 {
     private final String filename;
-    private String path;
+    private final String path;
 
     public FileHandlerService(String path)
     {
@@ -72,8 +73,8 @@ public class FileHandlerService
             writer.writeNext(headlines, true);
             writer.writeNext(empty, true);
 
-            translationMap.forEach((group, list) -> {
-                list.forEach(translation -> {
+            SortingUtility.sortEntityMap(translationMap).forEach((group, list) -> {
+                SortingUtility.sortEntityList(list).forEach(translation -> {
                     String[] line = {
                         translation.getKey(),
                         translation.getNotice(),

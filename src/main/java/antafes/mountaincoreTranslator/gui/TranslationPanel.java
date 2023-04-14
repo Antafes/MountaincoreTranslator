@@ -6,6 +6,7 @@ import antafes.mountaincoreTranslator.entity.TranslationMap;
 import antafes.mountaincoreTranslator.gui.element.PDControlScrollPane;
 import antafes.mountaincoreTranslator.gui.event.SaveFileEvent;
 import antafes.mountaincoreTranslator.gui.event.SaveFileListener;
+import antafes.mountaincoreTranslator.utility.SortingUtility;
 import org.apache.commons.lang3.StringUtils;
 
 import javax.swing.*;
@@ -60,7 +61,7 @@ public class TranslationPanel extends JTabbedPane
 
         this.createHeader(panel, constraints);
 
-        this.translations.forEach(
+        SortingUtility.sortEntityMap(this.translations).forEach(
             (group, translationList) -> this.createGroup(panel, constraints, group, translationList)
         );
 
@@ -144,7 +145,7 @@ public class TranslationPanel extends JTabbedPane
         panel.add(this.createGroupLabel(group), constraints);
         constraints.gridwidth = 1;
         constraints.gridy++;
-        translationList.forEach(translation -> {
+        SortingUtility.sortEntityList(translationList).forEach(translation -> {
             if (!skipEmpty || translation.getTranslated().isEmpty()) {
                 this.createRow(panel, constraints, translation);
             }

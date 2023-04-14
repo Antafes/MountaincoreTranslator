@@ -21,7 +21,7 @@
     "-Dfile.encoding=UTF-8"
   ],
   "resources": [
-    "src/main/resources"
+    "src/main/resources/images"
   ],
   "output": "target/MountaincoreTranslator",
   "verbose":"true"

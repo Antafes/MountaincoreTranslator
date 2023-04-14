@@ -19,10 +19,14 @@
 					<id>github-event-dispatcher</id>
 					<url>https://maven.pkg.github.com/antafes/eventdispatcher</url>
                     <releases><enabled>true</enabled></releases>
-					<snapshots>
-						<enabled>true</enabled>
-					</snapshots>
+					<snapshots><enabled>true</enabled></snapshots>
 				</repository>
+                <repository>
+                    <id>github-packer-maven</id>
+                    <url>https://maven.pkg.github.com/stevenmz/packer-maven-plugin</url>
+                    <releases><enabled>true</enabled></releases>
+                    <snapshots><enabled>true</enabled></snapshots>
+                </repository>
             </repositories> 
         </profile>
     </profiles>
@@ -30,6 +34,11 @@
     <servers>
         <server>
             <id>github-event-dispatcher</id>
+            <username>[[YourUsernameHere]]</username>
+            <password>[[YourPasswordHere]]</password>
+        </server>
+        <server>
+            <id>github-packer-maven</id>
             <username>[[YourUsernameHere]]</username>
             <password>[[YourPasswordHere]]</password>
         </server>

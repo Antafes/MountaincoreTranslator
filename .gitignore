@@ -38,3 +38,4 @@ build/
 .DS_Store
 /.m2/settings.xml
 /.idea/
+/src/main/resources/installers/packr_win.json

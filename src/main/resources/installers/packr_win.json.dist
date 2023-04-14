@@ -1,0 +1,28 @@
+{
+  "platform": "Windows64",
+  "jdk": "your/path/to/jdk.zip",
+  "executable": "MountaincoreTranslator",
+  "classpath": [
+    "target/MountaincoreTranslator.jar",
+    "target/lib/commons-beanutils-1.9.4.jar",
+    "target/lib/commons-collections4-4.4.jar",
+    "target/lib/commons-collections-3.2.2.jar",
+    "target/lib/commons-lang3-3.12.0.jar",
+    "target/lib/commons-logging-1.2.jar",
+    "target/lib/commons-text-1.10.0.jar",
+    "target/lib/event-dispatcher-1.0.0.jar",
+    "target/lib/lombok-1.18.24.jar",
+    "target/lib/opencsv-5.7.1.jar"
+  ],
+  "mainclass": "antafes.mountaincoreTranslator.MountaincoreTranslator",
+  "vmargs": [
+    "Xms500m",
+    "Xmx1024m",
+    "-Dfile.encoding=UTF-8"
+  ],
+  "resources": [
+    "src/main/resources"
+  ],
+  "output": "target/MountaincoreTranslator",
+  "verbose":"true"
+}

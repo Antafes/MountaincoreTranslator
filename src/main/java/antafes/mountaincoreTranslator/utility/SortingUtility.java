@@ -23,13 +23,16 @@
 package antafes.mountaincoreTranslator.utility;
 
 import antafes.mountaincoreTranslator.entity.TranslationEntity;
+import lombok.NonNull;
 
 import java.util.*;
 import java.util.stream.Collectors;
 
 public class SortingUtility
 {
-    public static HashMap<String, ArrayList<TranslationEntity>> sortEntityMap(HashMap<String, ArrayList<TranslationEntity>> entityMap)
+    public static HashMap<String, ArrayList<TranslationEntity>> sortEntityMap(
+        @NonNull HashMap<String, ArrayList<TranslationEntity>> entityMap
+    )
     {
         return entityMap.entrySet()
             .stream()
@@ -44,7 +47,7 @@ public class SortingUtility
             );
     }
 
-    public static ArrayList<TranslationEntity> sortEntityList(ArrayList<TranslationEntity> entityList)
+    public static @NonNull ArrayList<TranslationEntity> sortEntityList(@NonNull ArrayList<TranslationEntity> entityList)
     {
         entityList.sort(new KeyComparator());
 

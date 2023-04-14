@@ -23,7 +23,7 @@
 package antafes.mountaincoreTranslator.gui;
 
 
-import antafes.mountaincoreTranslator.Configuration;
+import lombok.Setter;
 
 import javax.swing.*;
 import java.awt.*;
@@ -31,17 +31,20 @@ import java.util.function.Function;
 
 class ShowWaitAction
 {
-    protected static final long SLEEP_TIME = 3 * 1000;
-    private Window window;
+    private final Window window;
+    @Setter
+    private String message = "Loading language file...";
 
     public ShowWaitAction(Window window) {
         this.window = window;
     }
 
     public void show(Function<Void, Void> function) {
-        SwingWorker<Void, Void> mySwingWorker = new SwingWorker<Void, Void>(){
+        SwingWorker<Void, Void> mySwingWorker = new SwingWorker<>()
+        {
             @Override
-            protected Void doInBackground() throws Exception {
+            protected Void doInBackground()
+            {
                 function.apply(null);
 
                 return null;
@@ -64,7 +67,7 @@ class ShowWaitAction
         progressBar.setIndeterminate(true);
         JPanel panel = new JPanel(new BorderLayout());
         panel.add(progressBar, BorderLayout.CENTER);
-        panel.add(new JLabel("Loading language file..."), BorderLayout.PAGE_START);
+        panel.add(new JLabel(this.message), BorderLayout.PAGE_START);
         dialog.add(panel);
         dialog.pack();
         dialog.setLocationRelativeTo(this.window);

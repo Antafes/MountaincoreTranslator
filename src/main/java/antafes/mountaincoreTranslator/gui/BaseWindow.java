@@ -3,11 +3,13 @@ package antafes.mountaincoreTranslator.gui;
 import antafes.mountaincoreTranslator.Configuration;
 import antafes.mountaincoreTranslator.MountaincoreTranslator;
 import antafes.mountaincoreTranslator.gui.event.*;
+import lombok.NonNull;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.InputEvent;
+import java.awt.event.KeyEvent;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -17,6 +19,8 @@ public class BaseWindow extends JFrame
     private TranslationPanel panel;
     private String filename;
     private JMenuItem saveMenuItem;
+    private JMenuItem searchMenuItem;
+    private String searchValue;
 
     public BaseWindow() throws HeadlessException
     {
@@ -73,32 +77,57 @@ public class BaseWindow extends JFrame
     {
         JMenuBar menuBar = new JMenuBar();
         JMenu fileMenu = new JMenu();
+        JMenu editMenu = new JMenu();
         JMenuItem openMenuItem = new JMenuItem();
-        saveMenuItem = new JMenuItem();
+        this.saveMenuItem = new JMenuItem();
         JMenuItem closeMenuItem = new JMenuItem();
+        this.searchMenuItem = new JMenuItem();
 
-        setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
+        setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
 
         fileMenu.setText("File");
+        fileMenu.setMnemonic('f');
 
-        openMenuItem.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_O, InputEvent.CTRL_DOWN_MASK));
+        openMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_O, InputEvent.CTRL_DOWN_MASK));
         openMenuItem.setText("Open");
         openMenuItem.addActionListener(new OpenActionListener(this));
+        openMenuItem.setMnemonic('o');
         fileMenu.add(openMenuItem);
 
-        saveMenuItem.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_S, InputEvent.CTRL_DOWN_MASK));
-        saveMenuItem.setText("Save");
-        saveMenuItem.addActionListener(new SaveActionListener(this));
-        saveMenuItem.setEnabled(false);
-        fileMenu.add(saveMenuItem);
+        this.saveMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_S, InputEvent.CTRL_DOWN_MASK));
+        this.saveMenuItem.setText("Save");
+        this.saveMenuItem.addActionListener(new SaveActionListener(this));
+        this.saveMenuItem.setEnabled(false);
+        this.saveMenuItem.setMnemonic('s');
+        fileMenu.add(this.saveMenuItem);
 
-        closeMenuItem.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_Q, InputEvent.CTRL_DOWN_MASK));
+        closeMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_Q, InputEvent.CTRL_DOWN_MASK));
         closeMenuItem.setText("Quit");
         closeMenuItem.addActionListener(this::closeMenuItemActionPerformed);
+        closeMenuItem.setMnemonic('q');
         fileMenu.add(closeMenuItem);
 
+        editMenu.setText("Edit");
+        editMenu.setMnemonic('e');
+
+        this.searchMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_F, InputEvent.CTRL_DOWN_MASK));
+        this.searchMenuItem.setText("Search");
+        this.searchMenuItem.addActionListener(this::searchMenuItemActionPerformed);
+        this.searchMenuItem.setMnemonic('s');
+        this.searchMenuItem.setEnabled(false);
+        editMenu.add(this.searchMenuItem);
+
         menuBar.add(fileMenu);
+        menuBar.add(editMenu);
         setJMenuBar(menuBar);
+    }
+
+    private void searchMenuItemActionPerformed(ActionEvent actionEvent)
+    {
+        this.searchValue = JOptionPane.showInputDialog(this, "Search:", this.searchValue);
+        SearchEvent event = new SearchEvent();
+        event.setSearchValue(this.searchValue);
+        MountaincoreTranslator.getDispatcher().dispatch(event);
     }
 
     /**
@@ -126,19 +155,20 @@ public class BaseWindow extends JFrame
         );
     }
 
-    private void fileOpened(FileOpenedEvent fileOpenedEvent)
+    private void fileOpened(@NonNull FileOpenedEvent fileOpenedEvent)
     {
         this.filename = fileOpenedEvent.getFilename();
         ShowWaitAction waitAction = new ShowWaitAction(this);
         waitAction.show(aVoid -> {
             this.panel.setTranslations(fileOpenedEvent.getTranslationMap());
             this.saveMenuItem.setEnabled(true);
+            this.searchMenuItem.setEnabled(true);
 
             return null;
         });
     }
 
-    private void saveFile(SaveFileEvent saveFileEvent)
+    private void saveFile(@NonNull SaveFileEvent saveFileEvent)
     {
         saveFileEvent.setFilename(this.filename);
     }

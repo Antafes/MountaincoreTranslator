@@ -1,5 +1,7 @@
 package antafes.mountaincoreTranslator;
 
+import lombok.NonNull;
+
 import javax.swing.*;
 import java.awt.*;
 import java.io.BufferedInputStream;
@@ -100,7 +102,7 @@ public class Configuration
      *
      * @return File object for the file that should be saved
      */
-    public File getSaveDirPath(String filename)
+    public File getSaveDirPath(@NonNull String filename)
     {
         if (!filename.endsWith(".csv")) {
             filename += ".csv";
@@ -184,7 +186,7 @@ public class Configuration
      *
      * @param point Position of the window
      */
-    public void setWindowLocation(Point point)
+    public void setWindowLocation(@NonNull Point point)
     {
         this.properties.setProperty("windowLocationX", String.valueOf(point.getX()));
         this.properties.setProperty("windowLocationY", String.valueOf(point.getY()));

@@ -1,6 +1,7 @@
 package antafes.mountaincoreTranslator.utility;
 
 import antafes.mountaincoreTranslator.entity.TranslationEntity;
+import lombok.NonNull;
 
 import java.util.Comparator;
 
@@ -21,7 +22,7 @@ public class KeyComparator implements Comparator<TranslationEntity> {
      *         string is lexicographically greater than the string argument.
      */
     @Override
-    public int compare(TranslationEntity o1, TranslationEntity o2) {
+    public int compare(@NonNull TranslationEntity o1, @NonNull TranslationEntity o2) {
         String s1 = o1.getKey();
         String s2 = o2.getKey();
 

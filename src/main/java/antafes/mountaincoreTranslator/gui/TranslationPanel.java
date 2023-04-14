@@ -6,7 +6,10 @@ import antafes.mountaincoreTranslator.entity.TranslationMap;
 import antafes.mountaincoreTranslator.gui.element.PDControlScrollPane;
 import antafes.mountaincoreTranslator.gui.event.SaveFileEvent;
 import antafes.mountaincoreTranslator.gui.event.SaveFileListener;
+import antafes.mountaincoreTranslator.gui.event.SearchEvent;
+import antafes.mountaincoreTranslator.gui.event.SearchListener;
 import antafes.mountaincoreTranslator.utility.SortingUtility;
+import lombok.NonNull;
 import org.apache.commons.lang3.StringUtils;
 
 import javax.swing.*;
@@ -17,8 +20,10 @@ import java.util.HashMap;
 public class TranslationPanel extends JTabbedPane
 {
     private TranslationMap translations;
+    private TranslationMap originalTranslations;
     private boolean evenRow = true;
     private final HashMap<String, JTextPane> translationElements = new HashMap<>();
+    private JPanel allPanel;
 
     public void setTranslations(TranslationMap translations)
     {
@@ -41,6 +46,10 @@ public class TranslationPanel extends JTabbedPane
             SaveFileEvent.class,
             new SaveFileListener(this::saveFile)
         );
+        MountaincoreTranslator.getDispatcher().addListener(
+            SearchEvent.class,
+            new SearchListener(this::search)
+        );
     }
 
     private void clearTabs()
@@ -55,23 +64,29 @@ public class TranslationPanel extends JTabbedPane
 
     private void addAllTab()
     {
-        JPanel panel = new JPanel();
-        panel.setLayout(new GridBagLayout());
-        GridBagConstraints constraints = this.setupConstraints();
+        this.allPanel = new JPanel();
+        this.allPanel.setLayout(new GridBagLayout());
 
-        this.createHeader(panel, constraints);
-
-        SortingUtility.sortEntityMap(this.translations).forEach(
-            (group, translationList) -> this.createGroup(panel, constraints, group, translationList)
-        );
+        this.fillAllTab();
 
         JScrollPane scrollPane = new JScrollPane();
         scrollPane.setPreferredSize(new Dimension(1000, 600));
         scrollPane.getVerticalScrollBar().setUnitIncrement(16);
         scrollPane.getHorizontalScrollBar().setUnitIncrement(16);
-        scrollPane.setViewportView(panel);
+        scrollPane.setViewportView(this.allPanel);
 
         this.addTab("All translations", scrollPane);
+    }
+
+    private void fillAllTab()
+    {
+        GridBagConstraints constraints = this.setupConstraints();
+
+        this.createHeader(this.allPanel, constraints);
+
+        SortingUtility.sortEntityMap(this.translations).forEach(
+            (group, translationList) -> this.createGroup(this.allPanel, constraints, group, translationList)
+        );
     }
 
     private void addUntranslatedTab()
@@ -82,7 +97,7 @@ public class TranslationPanel extends JTabbedPane
 
         this.createHeader(panel, constraints);
 
-        this.translations.forEach(
+        SortingUtility.sortEntityMap(this.translations).forEach(
             (group, translationList) -> this.createGroup(panel, constraints, group, translationList, true)
         );
 
@@ -95,7 +110,7 @@ public class TranslationPanel extends JTabbedPane
         this.addTab("Not translated", scrollPane);
     }
 
-    private GridBagConstraints setupConstraints()
+    private @NonNull GridBagConstraints setupConstraints()
     {
         GridBagConstraints constraints = new GridBagConstraints();
         constraints.gridwidth = 1;
@@ -108,7 +123,7 @@ public class TranslationPanel extends JTabbedPane
         return constraints;
     }
 
-    private void createHeader(JPanel panel, GridBagConstraints constraints)
+    private void createHeader(@NonNull JPanel panel, GridBagConstraints constraints)
     {
         panel.add(new JLabel("Key"), constraints);
         constraints.gridx++;
@@ -152,7 +167,7 @@ public class TranslationPanel extends JTabbedPane
         });
     }
 
-    private boolean checkGroupAllTranslated(ArrayList<TranslationEntity> translationList)
+    private boolean checkGroupAllTranslated(@NonNull ArrayList<TranslationEntity> translationList)
     {
         for (TranslationEntity translation : translationList) {
             if (translation.getTranslated().isEmpty()) {
@@ -219,7 +234,7 @@ public class TranslationPanel extends JTabbedPane
         constraints.gridy++;
     }
 
-    private JLabel createGroupLabel(String group)
+    private @NonNull JLabel createGroupLabel(@NonNull String group)
     {
         String[] parts = group.toLowerCase().split("_");
         parts[0] = StringUtils.capitalize(parts[0]);
@@ -227,7 +242,7 @@ public class TranslationPanel extends JTabbedPane
         return new JLabel(StringUtils.joinWith(" ", (Object[]) parts));
     }
 
-    private void saveFile(SaveFileEvent saveFileEvent)
+    private void saveFile(@NonNull SaveFileEvent saveFileEvent)
     {
         TranslationMap map = new TranslationMap(this.translations.getLanguage());
 
@@ -246,5 +261,41 @@ public class TranslationPanel extends JTabbedPane
         });
 
         saveFileEvent.setTranslationMap(map);
+    }
+
+    private void search(@NonNull SearchEvent searchEvent)
+    {
+        if (searchEvent.getSearchValue().isEmpty()) {
+            ShowWaitAction waitAction = new ShowWaitAction(SwingUtilities.windowForComponent(this));
+            waitAction.setMessage("Loading translations...");
+            waitAction.show(aVoid -> {
+                this.translations = (TranslationMap) this.originalTranslations.clone();
+                this.allPanel.removeAll();
+                this.fillAllTab();
+
+                return null;
+            });
+
+            return;
+        }
+
+        this.originalTranslations = (TranslationMap) this.translations.clone();
+        this.translations.clear();
+
+        this.originalTranslations.forEach((group, list) -> {
+            if (!this.translations.containsKey(group)) {
+                this.translations.put(group, new ArrayList<>());
+            }
+
+            list.stream().filter(
+                entity -> entity.getKey().contains(searchEvent.getSearchValue()) || entity.getNotice()
+                    .contains(searchEvent.getSearchValue()) || entity.getEnglish()
+                    .contains(searchEvent.getSearchValue()) || entity.getTranslated()
+                    .contains(searchEvent.getSearchValue())
+            ).forEachOrdered(entity -> this.translations.get(group).add(entity));
+        });
+        this.translations.entrySet().removeIf(entry -> entry.getValue().isEmpty());
+        this.allPanel.removeAll();
+        this.fillAllTab();
     }
 }

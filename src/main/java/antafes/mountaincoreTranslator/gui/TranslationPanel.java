@@ -4,15 +4,14 @@ import antafes.mountaincoreTranslator.MountaincoreTranslator;
 import antafes.mountaincoreTranslator.entity.TranslationEntity;
 import antafes.mountaincoreTranslator.entity.TranslationMap;
 import antafes.mountaincoreTranslator.gui.element.PDControlScrollPane;
-import antafes.mountaincoreTranslator.gui.event.SaveFileEvent;
-import antafes.mountaincoreTranslator.gui.event.SaveFileListener;
-import antafes.mountaincoreTranslator.gui.event.SearchEvent;
-import antafes.mountaincoreTranslator.gui.event.SearchListener;
+import antafes.mountaincoreTranslator.gui.event.*;
 import antafes.mountaincoreTranslator.utility.SortingUtility;
 import lombok.NonNull;
 import org.apache.commons.lang3.StringUtils;
 
 import javax.swing.*;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import java.awt.*;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -24,6 +23,7 @@ public class TranslationPanel extends JTabbedPane
     private boolean evenRow = true;
     private final HashMap<String, JTextPane> translationElements = new HashMap<>();
     private JPanel allPanel;
+    private boolean fileUnsaved;
 
     public void setTranslations(TranslationMap translations)
     {
@@ -32,6 +32,7 @@ public class TranslationPanel extends JTabbedPane
         }
 
         this.clearTabs();
+        this.fileUnsaved = false;
         this.translations = translations;
 
         this.addAllTab();
@@ -49,6 +50,10 @@ public class TranslationPanel extends JTabbedPane
         MountaincoreTranslator.getDispatcher().addListener(
             SearchEvent.class,
             new SearchListener(this::search)
+        );
+        MountaincoreTranslator.getDispatcher().addListener(
+            UnsavedFileCheckEvent.class,
+            new UnsavedFileCheckListener((event) -> event.setFileUnsaved(this.fileUnsaved))
         );
     }
 
@@ -225,6 +230,7 @@ public class TranslationPanel extends JTabbedPane
         JTextPane textArea = new JTextPane();
         textArea.setPreferredSize(new Dimension(300, 50));
         textArea.setText(translation.getTranslated());
+        textArea.getDocument().addDocumentListener(this.createDocumentListener());
         JScrollPane translationScrollPane = new PDControlScrollPane();
         translationScrollPane.setPreferredSize(new Dimension(300, 50));
         translationScrollPane.setViewportView(textArea);
@@ -297,5 +303,34 @@ public class TranslationPanel extends JTabbedPane
         this.translations.entrySet().removeIf(entry -> entry.getValue().isEmpty());
         this.allPanel.removeAll();
         this.fillAllTab();
+    }
+
+    private DocumentListener createDocumentListener()
+    {
+        return new DocumentListener()
+        {
+            @Override
+            public void insertUpdate(DocumentEvent e)
+            {
+                this.changed();
+            }
+
+            @Override
+            public void removeUpdate(DocumentEvent e)
+            {
+                this.changed();
+            }
+
+            @Override
+            public void changedUpdate(DocumentEvent e)
+            {
+                this.changed();
+            }
+
+            private void changed()
+            {
+                fileUnsaved = true;
+            }
+        };
     }
 }

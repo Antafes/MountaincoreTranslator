@@ -10,6 +10,7 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
+import java.awt.event.WindowEvent;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -43,7 +44,7 @@ public class BaseWindow extends JFrame
         this.setExtendedState(this.configuration.getExtendedState());
     }
 
-    private void closeProgramme()
+    private void closeProgram()
     {
         this.configuration.setWindowLocation(this.getLocationOnScreen());
         this.configuration.setExtendedState(this.getExtendedState());
@@ -136,15 +137,22 @@ public class BaseWindow extends JFrame
      * @param evt Event object
      */
     private void closeMenuItemActionPerformed(ActionEvent evt) {
-//        if (this.checkForUnsavedCharacters()) {
-//            this.showUnsavedCharactersDialog();
-//        } else {
-            this.closeProgramme();
-//        }
+        UnsavedFileCheckEvent event = new UnsavedFileCheckEvent();
+        MountaincoreTranslator.getDispatcher().dispatch(event);
+
+        if (event.isFileUnsaved()) {
+            this.showUnsavedFileDialog();
+        } else {
+            MountaincoreTranslator.getDispatcher().dispatch(new CloseProgramEvent());
+        }
     }
 
     private void registerEvents()
     {
+        MountaincoreTranslator.getDispatcher().addListener(
+            CloseProgramEvent.class,
+            new CloseProgramListener((event) -> this.closeProgram())
+        );
         MountaincoreTranslator.getDispatcher().addListener(
             FileOpenedEvent.class,
             new FileOpenedListener(this::fileOpened)
@@ -152,6 +160,14 @@ public class BaseWindow extends JFrame
         MountaincoreTranslator.getDispatcher().addListener(
             SaveFileEvent.class,
             new SaveFileListener(this::saveFile)
+        );
+        MountaincoreTranslator.getDispatcher().addListener(
+            TriggerSaveFileEvent.class,
+            new TriggerSaveFileListener((event) -> this.saveMenuItem.doClick())
+        );
+        MountaincoreTranslator.getDispatcher().addListener(
+            AddEscapeCloseEvent.class,
+            new AddEscapeCloseListener((event) -> this.installEscapeCloseOperation(event.getDialog()))
         );
     }
 
@@ -171,5 +187,42 @@ public class BaseWindow extends JFrame
     private void saveFile(@NonNull SaveFileEvent saveFileEvent)
     {
         saveFileEvent.setFilename(this.filename);
+    }
+
+    private void showUnsavedFileDialog() {
+        UnsavedFileDialog dialog = new UnsavedFileDialog(this);
+        int x,
+            y,
+            width = dialog.getWidth(),
+            height = dialog.getHeight();
+
+        x = this.configuration.getWindowLocation().x + (this.getWidth() / 2 - width / 2);
+        y = this.configuration.getWindowLocation().y + (this.getHeight() / 2 - height / 2);
+
+        dialog.setBounds(x, y, width, height);
+        dialog.setVisible(true);
+    }
+
+    /**
+     * Install a dialog wide escape handler.
+     *
+     * @param dialog The dialog element to close
+     */
+    public void installEscapeCloseOperation(@NonNull JDialog dialog) {
+        Action dispatchClosing = new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent event) {
+                dialog.dispatchEvent(new WindowEvent(
+                    dialog, WindowEvent.WINDOW_CLOSING
+                ));
+            }
+        };
+        KeyStroke escapeStroke = KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0);
+        String dispatchWindowClosingActionMapKey = "com.spodding.tackline.dispatch:WINDOW_CLOSING";
+        JRootPane root = dialog.getRootPane();
+        root.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(
+            escapeStroke, dispatchWindowClosingActionMapKey
+        );
+        root.getActionMap().put(dispatchWindowClosingActionMapKey, dispatchClosing);
     }
 }

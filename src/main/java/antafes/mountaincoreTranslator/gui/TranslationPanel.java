@@ -40,13 +40,13 @@ public class TranslationPanel extends JTabbedPane
         this.addAllTab();
         this.addUntranslatedTab();
 
-        this.addTabFocusListener();
+        this.addChangeTabListener();
         this.addFieldListener();
 
         this.addEventListener();
     }
 
-    private void addTabFocusListener()
+    private void addChangeTabListener()
     {
         this.addChangeListener(e -> {
             JTabbedPane sourceTabbedPane = (JTabbedPane) e.getSource();
@@ -312,9 +312,10 @@ public class TranslationPanel extends JTabbedPane
             ShowWaitAction waitAction = new ShowWaitAction(SwingUtilities.windowForComponent(this));
             waitAction.setMessage("Loading translations...");
             waitAction.show(aVoid -> {
-                this.translations = (TranslationMap) this.originalTranslations.clone();
+                this.translations = this.createTranslationMapFromMap(this.originalTranslations);
                 this.allPanel.removeAll();
                 this.fillAllTab();
+                this.addFieldListener();
                 this.originalTranslations = null;
 
                 return null;
@@ -332,15 +333,35 @@ public class TranslationPanel extends JTabbedPane
             }
 
             list.stream().filter(
-                entity -> entity.getKey().contains(searchEvent.getSearchValue()) || entity.getNotice()
-                    .contains(searchEvent.getSearchValue()) || entity.getEnglish()
-                    .contains(searchEvent.getSearchValue()) || entity.getTranslated()
-                    .contains(searchEvent.getSearchValue())
+                entity -> StringUtils.containsIgnoreCase(entity.getKey(), searchEvent.getSearchValue())
+                    || StringUtils.containsIgnoreCase(entity.getNotice(), searchEvent.getSearchValue())
+                    || StringUtils.containsIgnoreCase(entity.getEnglish(), searchEvent.getSearchValue())
+                    || StringUtils.containsIgnoreCase(entity.getTranslated(), searchEvent.getSearchValue())
             ).forEachOrdered(entity -> this.translations.get(group).add(entity));
         });
         this.translations.entrySet().removeIf(entry -> entry.getValue().isEmpty());
+        this.translations = this.createTranslationMapFromMap(this.translations);
         this.allPanel.removeAll();
         this.fillAllTab();
+        this.addFieldListener();
+    }
+
+    private TranslationMap createTranslationMapFromMap(TranslationMap translationMap)
+    {
+        TranslationMap map = new TranslationMap(translationMap.getLanguage());
+        translationMap.forEach((group, list) -> {
+            if (!map.containsKey(group)) {
+                map.put(group, new ArrayList<>());
+            }
+
+            list.forEach(translation -> map.get(group).add(
+                translation.toBuilder()
+                    .setTranslated(this.changedTranslations.get(translation.getKey()).getTranslated())
+                    .build()
+            ));
+        });
+
+        return map;
     }
 
     private DocumentListener createDocumentListener(JTextPane textArea)

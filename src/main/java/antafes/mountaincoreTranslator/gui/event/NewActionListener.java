@@ -2,6 +2,7 @@ package antafes.mountaincoreTranslator.gui.event;
 
 import antafes.mountaincoreTranslator.Configuration;
 import antafes.mountaincoreTranslator.MountaincoreTranslator;
+import antafes.mountaincoreTranslator.entity.TranslationMap;
 import antafes.mountaincoreTranslator.gui.OpenFileChooser;
 import antafes.mountaincoreTranslator.service.FileHandlerService;
 
@@ -10,11 +11,11 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
-public class OpenActionListener implements ActionListener
+public class NewActionListener implements ActionListener
 {
     private final Component parent;
 
-    public OpenActionListener(Component parent)
+    public NewActionListener(Component parent)
     {
         this.parent = parent;
     }
@@ -23,18 +24,27 @@ public class OpenActionListener implements ActionListener
     public void actionPerformed(ActionEvent e)
     {
         Configuration configuration = Configuration.getInstance();
+
+        JOptionPane.showMessageDialog(
+            this.parent,
+            "In order to create a new translation file you need to select any existing file."
+        );
         OpenFileChooser fileChooser = new OpenFileChooser();
         fileChooser.setCurrentDirectory(configuration.getOpenDirPath());
         int result = fileChooser.showOpenDialog(this.parent);
 
-        if (result == JFileChooser.APPROVE_OPTION) {
+        if (result == OpenFileChooser.APPROVE_OPTION) {
             configuration.setOpenDirPath(fileChooser.getSelectedFile().getParent());
             configuration.saveProperties();
 
+            String language = JOptionPane.showInputDialog(this.parent, "What language do you want to create?")
+                .toLowerCase();
             FileHandlerService service = new FileHandlerService(fileChooser.getSelectedFile().getPath());
             FileOpenedEvent event = new FileOpenedEvent();
-            event.setTranslationMap(service.read())
-                .setFilename(fileChooser.getSelectedFile().getName());
+            TranslationMap map = new TranslationMap(language);
+            map.putAll(service.read());
+            event.setTranslationMap(map)
+                .setFilename(configuration.getSaveDirPath(language).getName());
             MountaincoreTranslator.getDispatcher().dispatch(event);
         }
     }

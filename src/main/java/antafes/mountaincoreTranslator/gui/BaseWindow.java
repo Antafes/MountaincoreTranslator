@@ -79,6 +79,7 @@ public class BaseWindow extends JFrame
         JMenuBar menuBar = new JMenuBar();
         JMenu fileMenu = new JMenu();
         JMenu editMenu = new JMenu();
+        JMenuItem newMenuItem = new JMenuItem();
         JMenuItem openMenuItem = new JMenuItem();
         this.saveMenuItem = new JMenuItem();
         JMenuItem closeMenuItem = new JMenuItem();
@@ -88,6 +89,12 @@ public class BaseWindow extends JFrame
 
         fileMenu.setText("File");
         fileMenu.setMnemonic('f');
+
+        newMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_N, InputEvent.CTRL_DOWN_MASK));
+        newMenuItem.setText("New");
+        newMenuItem.addActionListener(new NewActionListener(this));
+        newMenuItem.setMnemonic('n');
+        fileMenu.add(newMenuItem);
 
         openMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_O, InputEvent.CTRL_DOWN_MASK));
         openMenuItem.setText("Open");

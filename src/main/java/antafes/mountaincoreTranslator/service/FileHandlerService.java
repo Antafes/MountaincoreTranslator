@@ -85,6 +85,8 @@ public class FileHandlerService
                 });
                 writer.writeNext(empty, true);
             });
+            writer.flush();
+            writer.close();
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

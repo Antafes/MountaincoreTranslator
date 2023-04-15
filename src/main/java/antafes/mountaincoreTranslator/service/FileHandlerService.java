@@ -64,7 +64,7 @@ public class FileHandlerService
             CSVWriter writer = new CSVWriter(new FileWriter(this.path), ',', '"', '"', "\r\n");
             String[] headlines = {
                 "KEY",
-                "NOTICE",
+                "NOTES",
                 "ENGLISH",
                 this.filename.split("\\.")[0].toUpperCase()
             };

@@ -21,9 +21,11 @@ public class TranslationPanel extends JTabbedPane
     private TranslationMap translations;
     private TranslationMap originalTranslations;
     private boolean evenRow = true;
-    private final HashMap<String, JTextPane> translationElements = new HashMap<>();
+    private final HashMap<String, HashMap<String, JTextPane>> translationElements = new HashMap<>();
     private JPanel allPanel;
     private boolean fileUnsaved;
+    private final HashMap<String, TranslationEntity> changedTranslations = new HashMap<>();
+    private JPanel untranslatedPanel;
 
     public void setTranslations(TranslationMap translations)
     {
@@ -38,7 +40,37 @@ public class TranslationPanel extends JTabbedPane
         this.addAllTab();
         this.addUntranslatedTab();
 
+        this.addTabFocusListener();
+        this.addFieldListener();
+
         this.addEventListener();
+    }
+
+    private void addTabFocusListener()
+    {
+        this.addChangeListener(e -> {
+            JTabbedPane sourceTabbedPane = (JTabbedPane) e.getSource();
+            int index = sourceTabbedPane.getSelectedIndex();
+
+            if (index == 0) {
+                translationElements.get("all").forEach(
+                    (key, element) -> element.setText(changedTranslations.get(key).getTranslated())
+                );
+            } else {
+                translationElements.get("untranslated").forEach(
+                    (key, element) -> element.setText(changedTranslations.get(key).getTranslated())
+                );
+            }
+        });
+    }
+
+    private void addFieldListener()
+    {
+        this.translationElements.forEach(
+            (tab, fieldList) -> fieldList.forEach(
+                (key, element) -> element.getDocument().addDocumentListener(this.createDocumentListener(element))
+            )
+        );
     }
 
     private void addEventListener()
@@ -71,6 +103,7 @@ public class TranslationPanel extends JTabbedPane
     {
         this.allPanel = new JPanel();
         this.allPanel.setLayout(new GridBagLayout());
+        this.allPanel.setName("all");
 
         this.fillAllTab();
 
@@ -90,27 +123,31 @@ public class TranslationPanel extends JTabbedPane
         this.createHeader(this.allPanel, constraints);
 
         SortingUtility.sortEntityMap(this.translations).forEach(
-            (group, translationList) -> this.createGroup(this.allPanel, constraints, group, translationList)
+            (group, translationList) ->  {
+                this.createGroup(this.allPanel, constraints, group, translationList);
+                translationList.forEach(entity -> this.changedTranslations.put(entity.getKey(), entity));
+            }
         );
     }
 
     private void addUntranslatedTab()
     {
-        JPanel panel = new JPanel();
-        panel.setLayout(new GridBagLayout());
+        this.untranslatedPanel = new JPanel();
+        this.untranslatedPanel.setLayout(new GridBagLayout());
+        this.untranslatedPanel.setName("untranslated");
         GridBagConstraints constraints = this.setupConstraints();
 
-        this.createHeader(panel, constraints);
+        this.createHeader(this.untranslatedPanel, constraints);
 
         SortingUtility.sortEntityMap(this.translations).forEach(
-            (group, translationList) -> this.createGroup(panel, constraints, group, translationList, true)
+            (group, translationList) -> this.createGroup(this.untranslatedPanel, constraints, group, translationList, true)
         );
 
         JScrollPane scrollPane = new JScrollPane();
         scrollPane.setPreferredSize(new Dimension(1100, 600));
         scrollPane.getVerticalScrollBar().setUnitIncrement(16);
         scrollPane.getHorizontalScrollBar().setUnitIncrement(16);
-        scrollPane.setViewportView(panel);
+        scrollPane.setViewportView(this.untranslatedPanel);
 
         this.addTab("Not translated", scrollPane);
     }
@@ -230,12 +267,17 @@ public class TranslationPanel extends JTabbedPane
         JTextPane textArea = new JTextPane();
         textArea.setPreferredSize(new Dimension(300, 50));
         textArea.setText(translation.getTranslated());
-        textArea.getDocument().addDocumentListener(this.createDocumentListener());
+        textArea.setName(translation.getKey());
         JScrollPane translationScrollPane = new PDControlScrollPane();
         translationScrollPane.setPreferredSize(new Dimension(300, 50));
         translationScrollPane.setViewportView(textArea);
         panel.add(translationScrollPane, constraints);
-        this.translationElements.put(translation.getKey(), textArea);
+
+        if (!this.translationElements.containsKey(panel.getName())) {
+            this.translationElements.put(panel.getName(), new HashMap<>());
+        }
+
+        this.translationElements.get(panel.getName()).put(translation.getKey(), textArea);
         constraints.gridx = 0;
         constraints.gridy++;
     }
@@ -252,20 +294,15 @@ public class TranslationPanel extends JTabbedPane
     {
         TranslationMap map = new TranslationMap(this.translations.getLanguage());
 
-        this.translations.forEach((group, list) -> {
-            if (!map.containsKey(group)) {
-                map.put(group, new ArrayList<>());
+        this.changedTranslations.forEach((key, translation) -> {
+            if (!map.containsKey(translation.getGroupElement())) {
+                map.put(translation.getGroupElement(), new ArrayList<>());
             }
 
-            list.forEach(
-                entity -> map.get(group).add(
-                    entity.toBuilder()
-                        .setTranslated(this.translationElements.get(entity.getKey()).getText())
-                        .build()
-                )
-            );
+            map.get(translation.getGroupElement()).add(translation);
         });
 
+        this.fileUnsaved = false;
         saveFileEvent.setTranslationMap(map);
     }
 
@@ -278,6 +315,7 @@ public class TranslationPanel extends JTabbedPane
                 this.translations = (TranslationMap) this.originalTranslations.clone();
                 this.allPanel.removeAll();
                 this.fillAllTab();
+                this.originalTranslations = null;
 
                 return null;
             });
@@ -305,9 +343,9 @@ public class TranslationPanel extends JTabbedPane
         this.fillAllTab();
     }
 
-    private DocumentListener createDocumentListener()
+    private DocumentListener createDocumentListener(JTextPane textArea)
     {
-        return new DocumentListener()
+        ComponentDocumentListener listener = new ComponentDocumentListener()
         {
             @Override
             public void insertUpdate(DocumentEvent e)
@@ -330,7 +368,19 @@ public class TranslationPanel extends JTabbedPane
             private void changed()
             {
                 fileUnsaved = true;
+                JTextPane component = ((JTextPane) this.getComponent());
+                String key = component.getName();
+                String value = component.getText();
+                changedTranslations.put(
+                    component.getName(),
+                    changedTranslations.get(key).toBuilder()
+                        .setTranslated(value)
+                        .build()
+                );
             }
         };
+        listener.setComponent(textArea);
+
+        return listener;
     }
 }

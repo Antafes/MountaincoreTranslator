@@ -324,7 +324,10 @@ public class TranslationPanel extends JTabbedPane
             return;
         }
 
-        this.originalTranslations = (TranslationMap) this.translations.clone();
+        if (this.originalTranslations == null || this.originalTranslations.isEmpty()) {
+            this.originalTranslations = (TranslationMap) this.translations.clone();
+        }
+
         this.translations.clear();
 
         this.originalTranslations.forEach((group, list) -> {

@@ -3,15 +3,11 @@ package antafes.mountaincoreTranslator.service;
 import antafes.mountaincoreTranslator.entity.TranslationEntity;
 import antafes.mountaincoreTranslator.entity.TranslationMap;
 import antafes.mountaincoreTranslator.utility.SortingUtility;
-import com.opencsv.CSVReader;
-import com.opencsv.CSVWriter;
+import com.opencsv.*;
 import com.opencsv.exceptions.CsvValidationException;
 import org.apache.commons.lang3.StringUtils;
 
-import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.Objects;
 
@@ -29,7 +25,9 @@ public class FileHandlerService
     public TranslationMap read()
     {
         try {
-            CSVReader reader = new CSVReader(new FileReader(this.path));
+            CSVReader reader = new CSVReaderBuilder(new FileReader(this.path))
+                .withCSVParser(new RFC4180ParserBuilder().build())
+                .build();
             TranslationMap translationEntities = new TranslationMap(this.getLanguageFromFilename());
             String[] values;
             TranslationEntity entity;

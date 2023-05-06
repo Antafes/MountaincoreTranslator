@@ -59,7 +59,9 @@ public class FileHandlerService
     public void write(TranslationMap translationMap)
     {
         try {
-            CSVWriter writer = new CSVWriter(new FileWriter(this.path), ',', '"', '"', "\r\n");
+            ICSVWriter writer = new CSVWriterBuilder(new FileWriter(this.path))
+                .withParser(new RFC4180ParserBuilder().build())
+                .build();
             String[] headlines = {
                 "KEY",
                 "NOTES",

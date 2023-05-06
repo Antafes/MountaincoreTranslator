@@ -5,6 +5,7 @@ import antafes.mountaincoreTranslator.entity.TranslationEntity;
 import antafes.mountaincoreTranslator.entity.TranslationMap;
 import antafes.mountaincoreTranslator.gui.element.PDControlScrollPane;
 import antafes.mountaincoreTranslator.gui.event.*;
+import antafes.mountaincoreTranslator.gui.policy.TranslationFocusTraversalPolicy;
 import antafes.mountaincoreTranslator.utility.SortingUtility;
 import lombok.NonNull;
 import org.apache.commons.lang3.StringUtils;
@@ -13,19 +14,28 @@ import javax.swing.*;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import java.awt.*;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Vector;
 
 public class TranslationPanel extends JTabbedPane
 {
     private TranslationMap translations;
     private TranslationMap originalTranslations;
     private boolean evenRow = true;
-    private final HashMap<String, HashMap<String, JTextPane>> translationElements = new HashMap<>();
+    private final HashMap<String, HashMap<String, JTextArea>> translationElements = new HashMap<>();
     private JPanel allPanel;
     private boolean fileUnsaved;
     private final HashMap<String, TranslationEntity> changedTranslations = new HashMap<>();
     private JPanel untranslatedPanel;
+    private final Vector<Component> order;
+
+    public TranslationPanel()
+    {
+        this.order = new Vector<>();
+    }
 
     public void setTranslations(TranslationMap translations)
     {
@@ -71,6 +81,8 @@ public class TranslationPanel extends JTabbedPane
                 (key, element) -> element.getDocument().addDocumentListener(this.createDocumentListener(element))
             )
         );
+        this.setFocusTraversalPolicy(new TranslationFocusTraversalPolicy(this.order));
+        this.setFocusTraversalPolicyProvider(true);
     }
 
     private void addEventListener()
@@ -264,14 +276,33 @@ public class TranslationPanel extends JTabbedPane
         panel.add(englishScrollPane, constraints);
         constraints.gridx++;
 
-        JTextPane textArea = new JTextPane();
-        textArea.setPreferredSize(new Dimension(300, 50));
+        JTextArea textArea = new JTextArea();
+        textArea.setRows(3);
+        textArea.setColumns(20);
+        textArea.setLineWrap(true);
+        textArea.setWrapStyleWord(true);
         textArea.setText(translation.getTranslated());
         textArea.setName(translation.getKey());
+        textArea.addKeyListener(new KeyAdapter()
+        {
+            @Override
+            public void keyPressed(KeyEvent e)
+            {
+                if (e.getKeyCode() == KeyEvent.VK_TAB) {
+                    if (e.getModifiersEx() > 0) {
+                        ((JTextArea) e.getSource()).transferFocusBackward();
+                    } else {
+                        ((JTextArea) e.getSource()).transferFocus();
+                    }
+                    e.consume();
+                }
+            }
+        });
         JScrollPane translationScrollPane = new PDControlScrollPane();
         translationScrollPane.setPreferredSize(new Dimension(300, 50));
         translationScrollPane.setViewportView(textArea);
         panel.add(translationScrollPane, constraints);
+        this.order.add(textArea);
 
         if (!this.translationElements.containsKey(panel.getName())) {
             this.translationElements.put(panel.getName(), new HashMap<>());
@@ -314,6 +345,7 @@ public class TranslationPanel extends JTabbedPane
             waitAction.show(aVoid -> {
                 this.translations = this.createTranslationMapFromMap(this.originalTranslations);
                 this.allPanel.removeAll();
+                this.order.clear();
                 this.fillAllTab();
                 this.addFieldListener();
                 this.originalTranslations = null;
@@ -345,6 +377,7 @@ public class TranslationPanel extends JTabbedPane
         this.translations.entrySet().removeIf(entry -> entry.getValue().isEmpty());
         this.translations = this.createTranslationMapFromMap(this.translations);
         this.allPanel.removeAll();
+        this.order.clear();
         this.fillAllTab();
         this.addFieldListener();
     }
@@ -367,7 +400,7 @@ public class TranslationPanel extends JTabbedPane
         return map;
     }
 
-    private DocumentListener createDocumentListener(JTextPane textArea)
+    private DocumentListener createDocumentListener(JTextArea textArea)
     {
         ComponentDocumentListener listener = new ComponentDocumentListener()
         {
@@ -392,7 +425,7 @@ public class TranslationPanel extends JTabbedPane
             private void changed()
             {
                 fileUnsaved = true;
-                JTextPane component = ((JTextPane) this.getComponent());
+                JTextArea component = ((JTextArea) this.getComponent());
                 String key = component.getName();
                 String value = component.getText();
                 changedTranslations.put(

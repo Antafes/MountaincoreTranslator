@@ -1,5 +1,6 @@
 package antafes.mountaincoreTranslator;
 
+import com.google.gson.Gson;
 import lombok.NonNull;
 
 import javax.swing.*;
@@ -9,6 +10,7 @@ import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.util.ArrayList;
 import java.util.Properties;
 
 public class Configuration
@@ -17,6 +19,7 @@ public class Configuration
     public static final String PATH = System.getProperty("user.home") + "/.mctranslator/";
     private final Properties properties;
     private final File propertiesFile;
+    private final ArrayList<String> openedFiles;
 
     /**
      * constructor
@@ -25,6 +28,7 @@ public class Configuration
     {
         this.propertiesFile = new File(PATH + "gui.xml");
         this.properties = new Properties();
+        this.openedFiles = new ArrayList<>();
     }
 
     /**
@@ -68,6 +72,9 @@ public class Configuration
      */
     public void saveProperties()
     {
+        Gson gson = new Gson();
+        this.properties.setProperty("lastOpened", gson.toJson(this.openedFiles));
+
         BufferedOutputStream outputStream;
         try
         {
@@ -154,6 +161,19 @@ public class Configuration
         return Integer.parseInt(this.properties.getProperty("extendedState"));
     }
 
+    public ArrayList<String> getLastOpenedFiles()
+    {
+        if (this.openedFiles.isEmpty()) {
+            Gson gson = new Gson();
+
+            if (this.properties.containsKey("lastOpened")) {
+                this.openedFiles.addAll(gson.fromJson(this.properties.getProperty("lastOpened"), ArrayList.class));
+            }
+        }
+
+        return this.openedFiles;
+    }
+
     /**
      * Set the open dir path.
      *
@@ -197,5 +217,13 @@ public class Configuration
      */
     public void setExtendedState(int extendedState) {
         this.properties.setProperty("extendedState", Integer.toString(extendedState));
+    }
+
+    public void addLastOpened(String path) {
+        if (this.openedFiles.size() == 5) {
+            this.openedFiles.remove(0);
+        }
+
+        this.openedFiles.add(path);
     }
 }

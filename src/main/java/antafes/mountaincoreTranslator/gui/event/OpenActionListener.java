@@ -29,6 +29,7 @@ public class OpenActionListener implements ActionListener
 
         if (result == JFileChooser.APPROVE_OPTION) {
             configuration.setOpenDirPath(fileChooser.getSelectedFile().getParent());
+            configuration.addLastOpened(fileChooser.getSelectedFile().getPath());
             configuration.saveProperties();
 
             FileHandlerService service = new FileHandlerService(fileChooser.getSelectedFile().getPath());

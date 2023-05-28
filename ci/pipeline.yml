@@ -1,0 +1,153 @@
+resource_types:
+  - name: pull-request
+    type: docker-image
+    source:
+      repository: teliaoss/github-pr-resource
+
+resources:
+- name: mountaincore-translator-repo
+  type: git
+  source:
+    uri: https://github.com/Antafes/MountaincoreTranslator
+    branch: master
+    private_key: ((private_key))
+- name: mountaincore-translator-repo-dev
+  type: git
+  source:
+    uri: https://github.com/Antafes/MountaincoreTranslator
+    branch: dev
+    private_key: ((private_key))
+- name: mountaincore-translator-repo-pr
+  type: pull-request
+  check_every: 10m
+  source:
+    repository: Antafes/MountaincoreTranslator
+    access_token: ((acccess_token))
+- name: mountaincore-translator-pre-release
+  type: github-release
+  source:
+    owner: Antafes
+    repository: MountaincoreTranslator
+    pre_release: true
+    release: false
+    access_token: ((acccess_token))
+- name: mountaincore-translator-release
+  type: github-release
+  source:
+    owner: Antafes
+    repository: MountaincoreTranslator
+    release: true
+    drafts: false
+    access_token: ((acccess_token))
+
+jobs:
+- name: mountaincore-translator-pr
+  plan:
+    - get: mountaincore-translator-repo-pr
+      trigger: true
+      version: every
+    - put: mountaincore-translator-repo-pr
+      params:
+        path: mountaincore-translator-repo-pr
+        status: pending
+    - task: unit-test
+      config:
+        platform: linux
+        image_resource:
+          type: docker-image
+          source:
+            repository: maven
+            tag: 3-openjdk-15
+        inputs:
+          - name: mountaincore-translator-repo-pr
+        run:
+          path: ci/test.sh
+          args: ["((maven_access_token))"]
+          dir: mountaincore-translator-repo-pr
+        caches:
+          - path: maven
+      on_failure:
+        put: mountaincore-translator-repo-pr
+        params:
+          path: mountaincore-translator-repo-pr
+          status: failure
+    - put: mountaincore-translator-repo-pr
+      params:
+        path: mountaincore-translator-repo-pr
+        status: success
+
+- name: mountaincore-translator-dev
+  plan:
+  - get: mountaincore-translator-pre-release
+  - get: mountaincore-translator-repo-dev
+    trigger: true
+  - task: build
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          repository: maven
+          tag: 3-openjdk-15
+      inputs:
+      - name: mountaincore-translator-pre-release
+      - name: mountaincore-translator-repo-dev
+      outputs:
+      - name: dist
+      run:
+        path: ci/build-dev.sh
+        args: ["((maven_access_token))"]
+        dir: mountaincore-translator-repo-dev
+      caches:
+        - path: maven
+  - put: mountaincore-translator-pre-release
+    params:
+     name: dist/name
+     tag: dist/tag
+     commitish: dist/commit_sha
+     globs:
+      - dist/*.zip
+
+- name: mountaincore-translator
+  plan:
+  - get: mountaincore-translator-repo
+    trigger: true
+  - get: mountaincore-translator-release
+  - task: check-version
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          repository: debian
+          tag: stable-slim
+      inputs:
+      - name: mountaincore-translator-repo
+      - name: mountaincore-translator-release
+      run:
+        path: ci/check-version.sh
+        dir: mountaincore-translator-repo
+  - task: build
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          repository: maven
+          tag: 3-openjdk-15
+      inputs:
+      - name: mountaincore-translator-repo
+      outputs:
+      - name: dist
+      run:
+        path: ci/build.sh
+        args: ["((maven_access_token))"]
+        dir: mountaincore-translator-repo
+      caches:
+        - path: maven
+  - put: mountaincore-translator-release
+    params:
+      name: dist/name
+      tag: dist/tag
+      globs:
+      - dist/*.zip

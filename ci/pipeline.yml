@@ -134,7 +134,7 @@ jobs:
         type: docker-image
         source:
           repository: maven
-          tag: 3-openjdk-15
+          tag: 3-eclipse-temurin-17-focal
       inputs:
       - name: mountaincore-translator-repo
       outputs:

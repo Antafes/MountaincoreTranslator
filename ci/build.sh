@@ -17,7 +17,9 @@ fi
 VERSION=`cat VERSION`
 
 apt-get update
-apt-get install zip wget
+apt-get install zip wget python3-pip
+pip install gdown
+export PATH="$PATH:~/.local/bin/tqdm:~/.local/bin/gdown"
 
 # Setup maven settings
 $( pwd )/ci/set-m2-settings.sh ${ACCESS_TOKEN}
@@ -31,7 +33,7 @@ ZIPFILE=`basename *.zip`
 unzip ${ZIPFILE}
 cp "${CI}/MountaincoreTranslator.bat" "./MountaincoreTranslator-${VERSION}/"
 
-wget -O openjdk-windows-x64_bin.zip "https://docs.google.com/uc?export=download&id=${OPENJDK_FILEID}"
+gdown -O openjdk-windows-x64_bin.zip "${OPENJDK_FILEID}"
 unzip -d ./ "./openjdk-windows-x64_bin.zip"
 rm "./openjdk-windows-x64_bin.zip"
 cp -r ./jdk-19.0.2/jre ./MountaincoreTranslator-${VERSION}/

@@ -40,3 +40,4 @@ build/
 /.idea/
 /src/main/resources/installers/packr_win.json
 /openjdk*.zip
+/ci/variables.yml

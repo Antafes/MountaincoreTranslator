@@ -3,6 +3,7 @@ package antafes.mountaincoreTranslator.gui;
 import antafes.mountaincoreTranslator.Configuration;
 import antafes.mountaincoreTranslator.MountaincoreTranslator;
 import antafes.mountaincoreTranslator.gui.event.*;
+import antafes.mountaincoreTranslator.service.FileHandlerService;
 import lombok.NonNull;
 
 import javax.swing.*;
@@ -11,6 +12,9 @@ import java.awt.event.ActionEvent;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.WindowEvent;
+import java.io.File;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -22,6 +26,7 @@ public class BaseWindow extends JFrame
     private JMenuItem saveMenuItem;
     private JMenuItem searchMenuItem;
     private String searchValue;
+    private JMenu recentMenu;
 
     public BaseWindow() throws HeadlessException
     {
@@ -81,6 +86,7 @@ public class BaseWindow extends JFrame
         JMenu editMenu = new JMenu();
         JMenuItem newMenuItem = new JMenuItem();
         JMenuItem openMenuItem = new JMenuItem();
+        recentMenu = new JMenu();
         this.saveMenuItem = new JMenuItem();
         JMenuItem closeMenuItem = new JMenuItem();
         this.searchMenuItem = new JMenuItem();
@@ -101,6 +107,17 @@ public class BaseWindow extends JFrame
         openMenuItem.addActionListener(new OpenActionListener(this));
         openMenuItem.setMnemonic('o');
         fileMenu.add(openMenuItem);
+
+        this.recentMenu.setText("Last opened");
+        this.recentMenu.setMnemonic('l');
+
+        if (this.configuration.getLastOpenedFiles().size() == 0) {
+            this.recentMenu.setEnabled(false);
+        } else {
+            this.addLastOpenedFileEntries();
+        }
+
+        fileMenu.add(this.recentMenu);
 
         this.saveMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_S, InputEvent.CTRL_DOWN_MASK));
         this.saveMenuItem.setText("Save");
@@ -189,6 +206,7 @@ public class BaseWindow extends JFrame
 
             return null;
         });
+        this.addLastOpenedFileEntries();
     }
 
     private void saveFile(@NonNull SaveFileEvent saveFileEvent)
@@ -231,5 +249,27 @@ public class BaseWindow extends JFrame
             escapeStroke, dispatchWindowClosingActionMapKey
         );
         root.getActionMap().put(dispatchWindowClosingActionMapKey, dispatchClosing);
+    }
+
+    private void addLastOpenedFileEntries()
+    {
+        this.recentMenu.setEnabled(true);
+        this.recentMenu.removeAll();
+        ArrayList<String> files = new ArrayList<>(this.configuration.getLastOpenedFiles());
+        Collections.reverse(files);
+        files.forEach((file) -> {
+            JMenuItem lastOpened = new JMenuItem();
+            File fileObj = new File(file);
+
+            lastOpened.setText(fileObj.getName());
+            lastOpened.addActionListener(e -> {
+                FileHandlerService service = new FileHandlerService(fileObj.getPath());
+                FileOpenedEvent event = new FileOpenedEvent();
+                event.setTranslationMap(service.read())
+                    .setFilename(fileObj.getName());
+                MountaincoreTranslator.getDispatcher().dispatch(event);
+            });
+            this.recentMenu.add(lastOpened);
+        });
     }
 }

@@ -29,7 +29,8 @@ ZIPFILE=`basename *.zip`
 unzip ${ZIPFILE}
 cp "${CI}/MountaincoreTranslator.bat" "./MountaincoreTranslator-${VERSION}/"
 
-unzip -d ./ "${CI}/openjdk-19.0.2_windows-x64_bin.zip"
+wget -O openjdk-windows-x64_bin.zip https://drive.google.com/file/d/1JO5FY7dnJ5zuYSDffNU42cxQbqXt5iQQ/view?usp=share_link
+unzip -d ./ "./openjdk-windows-x64_bin.zip"
 cp -r ./jdk-19.0.2/jre ./MountaincoreTranslator-${VERSION}/
 
 zip -u -r MountaincoreTranslator-${VERSION}-win.zip ./MountaincoreTranslator-${VERSION}/

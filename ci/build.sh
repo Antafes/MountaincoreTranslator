@@ -17,7 +17,7 @@ fi
 VERSION=`cat VERSION`
 
 apt-get update
-apt-get install zip wget python3-pip
+apt-get install -y zip wget python3-pip
 pip install gdown
 export PATH="$PATH:~/.local/bin/tqdm:~/.local/bin/gdown"
 

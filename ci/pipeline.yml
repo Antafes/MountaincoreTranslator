@@ -22,7 +22,7 @@ resources:
   check_every: 10m
   source:
     repository: Antafes/MountaincoreTranslator
-    access_token: ((acccess_token))
+    access_token: ((access_token))
 - name: mountaincore-translator-pre-release
   type: github-release
   source:
@@ -30,7 +30,7 @@ resources:
     repository: MountaincoreTranslator
     pre_release: true
     release: false
-    access_token: ((acccess_token))
+    access_token: ((access_token))
 - name: mountaincore-translator-release
   type: github-release
   source:
@@ -38,7 +38,7 @@ resources:
     repository: MountaincoreTranslator
     release: true
     drafts: false
-    access_token: ((acccess_token))
+    access_token: ((access_token))
 
 jobs:
 - name: mountaincore-translator-pr

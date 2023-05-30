@@ -15,8 +15,8 @@ fi
 
 VERSION=`cat VERSION`
 
-apt update
-apt install zip
+apt-get update
+apt-get install zip wget
 
 # Setup maven settings
 $( pwd )/ci/set-m2-settings.sh ${ACCESS_TOKEN}
